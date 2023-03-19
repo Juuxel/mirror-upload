@@ -1,0 +1,6 @@
+/target/
+.idea/
+*.iml
+
+mirror_upload.config.toml
+mirror_upload.secrets.toml
