@@ -17,7 +17,7 @@ use mirror_upload::config::{Config, Project};
 use mirror_upload::curseforge::upload_to_curseforge;
 use mirror_upload::github::{GetReleaseByTagName, Repo};
 use mirror_upload::modrinth::upload_to_modrinth;
-use mirror_upload::requests::{ApiRequest, Secrets};
+use mirror_upload::requests::{ApiRequest, Context, Secrets};
 
 #[derive(Parser)]
 #[command(version)]
@@ -57,11 +57,15 @@ async fn main() -> Result<()> {
     };
 
     let repo = Repo::parse(&config.github)?;
+    let context = Context {
+        client,
+        secrets
+    };
     let release = GetReleaseByTagName {
         owner: repo.owner,
         repo: repo.name,
         tag: args.version_tag,
-    }.request(&client, &secrets).await?;
+    }.request(&context).await?;
     println!("Found GitHub release");
 
     if release.assets.is_empty() {
@@ -79,12 +83,12 @@ async fn main() -> Result<()> {
     for project in projects {
         let modrinth_id = project.modrinth.clone().or(config.modrinth.clone());
         if let Some(modrinth_id) = modrinth_id {
-            upload_to_modrinth(&client, &secrets, &config, &project, &release, modrinth_id.as_str()).await?;
+            upload_to_modrinth(&context, &config, &project, &release, modrinth_id.as_str()).await?;
         }
 
         let curseforge_id = project.curseforge.clone().or(config.curseforge.clone());
         if let Some(curseforge_id) = curseforge_id {
-            upload_to_curseforge(&client, &secrets, &config, &project, &release, curseforge_id.as_str()).await?;
+            upload_to_curseforge(&context, &config, &project, &release, curseforge_id.as_str()).await?;
         }
     }
 

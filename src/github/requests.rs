@@ -6,11 +6,10 @@
 
 use async_trait::async_trait;
 use miette::{IntoDiagnostic, miette, Result};
-use reqwest::Client;
 use reqwest::multipart::{Form, Part};
 
 use crate::github::{Asset, Release};
-use crate::requests::{ApiRequest, Secrets};
+use crate::requests::{ApiRequest, Context};
 
 const API_URL: &str = "https://api.github.com";
 const API_VERSION_KEY: &str = "X-GitHub-Api-Version";
@@ -26,11 +25,11 @@ pub struct GetReleaseByTagName {
 
 #[async_trait]
 impl ApiRequest<Release> for GetReleaseByTagName {
-    async fn request(&self, client: &Client, secrets: &Secrets) -> Result<Release> {
+    async fn request(&self, context: &Context) -> Result<Release> {
         let url = format!("{}/repos/{}/{}/releases/tags/{}", API_URL, self.owner, self.repo, self.tag);
-        let response = client.get(url)
+        let response = context.client.get(url)
             .header("Accept", JSON_CONTENT_TYPE)
-            .header(AUTH_KEY, &secrets.github_token)
+            .header(AUTH_KEY, &context.secrets.github_token)
             .header(API_VERSION_KEY, API_VERSION)
             .send()
             .await.into_diagnostic()?;
@@ -48,9 +47,9 @@ impl ApiRequest<Release> for GetReleaseByTagName {
 pub struct GetAsset<'a>(pub &'a Asset);
 
 impl GetAsset<'_> {
-    pub async fn attach_to_form(&self, client: &Client, secrets: &Secrets, form: Form, field_name: String) -> Result<Form> {
+    pub async fn attach_to_form(&self, context: &Context, form: Form, field_name: String) -> Result<Form> {
         println!("File: {}", self.0.name);
-        let asset_bytes = self.request(&client, &secrets).await?;
+        let asset_bytes = self.request(context).await?;
         let part = Part::stream(asset_bytes).file_name(self.0.name.clone());
         Ok(form.part(field_name, part))
     }
@@ -58,10 +57,10 @@ impl GetAsset<'_> {
 
 #[async_trait]
 impl ApiRequest<bytes::Bytes> for GetAsset<'_> {
-    async fn request(&self, client: &Client, secrets: &Secrets) -> Result<bytes::Bytes> {
-        let response = client.get(&self.0.url)
+    async fn request(&self, context: &Context) -> Result<bytes::Bytes> {
+        let response = context.client.get(&self.0.url)
             .header("Accept", "application/octet-stream")
-            .header(AUTH_KEY, &secrets.github_token)
+            .header(AUTH_KEY, &context.secrets.github_token)
             .header(API_VERSION_KEY, API_VERSION)
             .send()
             .await.into_diagnostic()?;

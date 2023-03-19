@@ -6,13 +6,13 @@
 
 use miette::{IntoDiagnostic, miette, Result};
 use regex::Regex;
-use reqwest::Client;
 use reqwest::multipart::Form;
 use serde::Serialize;
 
-use crate::config::{Config, Project, Secrets, ReleaseLevel};
+use crate::config::{Config, Project, ReleaseLevel};
 use crate::github::{Asset, GetAsset, Release};
 use crate::modrinth::{Dependency, VersionType};
+use crate::requests::Context;
 
 pub const API_URL: &str = "https://api.modrinth.com/v2";
 pub const AUTH_KEY: &str = "Authorization";
@@ -33,8 +33,7 @@ pub struct CreateVersionData {
 }
 
 pub async fn upload_to_modrinth(
-    client: &Client,
-    secrets: &Secrets,
+    context: &Context,
     config: &Config,
     project: &Project,
     release: &Release,
@@ -42,7 +41,7 @@ pub async fn upload_to_modrinth(
 ) -> Result<()> {
     println!("Uploading {} to Modrinth", release.tag_name);
     let mut form = Form::new();
-    let file_regex: Option<Regex> = project.get_regex(&config)?;
+    let file_regex: Option<Regex> = project.get_regex(config)?;
     let assets: Vec<&Asset> = release.get_assets(&file_regex);
     let file_parts: Vec<String> = assets.iter()
         .map(|asset| asset.name.clone())
@@ -55,9 +54,9 @@ pub async fn upload_to_modrinth(
         version_number: release.tag_name.clone(),
         changelog: release.body.clone(),
         dependencies: vec![],
-        game_versions: project.get_game_versions(&config)?,
-        version_type: ReleaseLevel::get(&config, &release).as_modrinth(),
-        loaders: project.get_loaders(&config)?
+        game_versions: project.get_game_versions(config)?,
+        version_type: ReleaseLevel::get(config, release).as_modrinth(),
+        loaders: project.get_loaders(config)?
             .iter()
             .map(|loader| loader.modrinth_id().to_string())
             .collect(),
@@ -69,15 +68,15 @@ pub async fn upload_to_modrinth(
     form = form.text("data", serde_json::to_string(&data).into_diagnostic()?);
 
     for asset in assets {
-        form = GetAsset(&asset)
-            .attach_to_form(&client, &secrets, form, asset.name.clone())
+        form = GetAsset(asset)
+            .attach_to_form(context, form, asset.name.clone())
             .await?;
     }
 
     let url = format!("{}/version", API_URL);
     println!("URL: {}", url);
-    let response = client.post(url)
-        .header(AUTH_KEY, &secrets.github_token)
+    let response = context.client.post(url)
+        .header(AUTH_KEY, &context.secrets.github_token)
         .multipart(form)
         .send().await.into_diagnostic()?;
 

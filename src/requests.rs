@@ -6,10 +6,16 @@
 
 use async_trait::async_trait;
 use miette::{Result};
+use reqwest::Client;
 
 pub use crate::config::Secrets;
 
+pub struct Context {
+    pub client: Client,
+    pub secrets: Secrets
+}
+
 #[async_trait]
 pub trait ApiRequest<T> {
-    async fn request(&self, client: &reqwest::Client, secrets: &Secrets) -> Result<T>;
+    async fn request(&self, context: &Context) -> Result<T>;
 }

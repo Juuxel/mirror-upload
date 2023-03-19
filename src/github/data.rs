@@ -45,7 +45,7 @@ pub struct Repo {
 impl Repo {
     pub fn parse<T>(str: T) -> Result<Repo> where T: AsRef<str> {
         let str = str.as_ref();
-        let parts: Vec<&str> = str.splitn(2, "/").collect();
+        let parts: Vec<&str> = str.splitn(2, '/').collect();
 
         if parts.len() != 2 {
             return Err(miette!("Expected GitHub repository name in the format 'owner/repo', found {}", str));
