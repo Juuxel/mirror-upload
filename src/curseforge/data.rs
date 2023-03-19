@@ -6,9 +6,6 @@
 
 use serde::{Deserialize, Serialize};
 
-pub const MINECRAFT_GAME_VERSION_TYPE_ID: u32 = 1;
-pub const LOADER_GAME_VERSION_TYPE_ID: u32 = 68441;
-
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "snake_case")]
 pub enum ReleaseType {
