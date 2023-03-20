@@ -9,7 +9,7 @@ use regex::Regex;
 use reqwest::multipart::Form;
 use serde::Serialize;
 
-use crate::config::{Config, Project, ReleaseLevel};
+use crate::config::{Config, ModrinthSettings, Project, ReleaseLevel};
 use crate::github::{Asset, GetAsset, Release};
 use crate::modrinth::{Dependency, VersionType};
 use crate::requests::Context;
@@ -37,7 +37,7 @@ pub async fn upload_to_modrinth(
     config: &Config,
     project: &Project,
     release: &Release,
-    modrinth_id: &str,
+    settings: &ModrinthSettings,
 ) -> Result<()> {
     println!("Uploading {} to Modrinth", release.tag_name);
     let mut form = Form::new();
@@ -53,7 +53,7 @@ pub async fn upload_to_modrinth(
         name,
         version_number: release.tag_name.clone(),
         changelog: release.body.clone(),
-        dependencies: vec![],
+        dependencies: settings.dependencies.clone().unwrap_or(vec![]),
         game_versions: project.get_game_versions(config)?,
         version_type: ReleaseLevel::get(config, release).as_modrinth(),
         loaders: project.get_loaders(config)?
@@ -61,7 +61,7 @@ pub async fn upload_to_modrinth(
             .map(|loader| loader.modrinth_id().to_string())
             .collect(),
         featured: false,
-        project_id: modrinth_id.to_string(),
+        project_id: settings.project.to_string(),
         file_parts,
         primary_file,
     };

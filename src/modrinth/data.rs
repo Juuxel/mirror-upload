@@ -6,7 +6,7 @@
 
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Copy, Clone)]
 #[serde(rename_all = "snake_case")]
 pub enum DependencyType {
     Required,
@@ -15,8 +15,15 @@ pub enum DependencyType {
     Embedded
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+impl Default for DependencyType {
+    fn default() -> Self {
+        DependencyType::Required
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone)]
 pub struct Dependency {
+    #[serde(default)]
     pub dependency_type: DependencyType,
     pub file_name: Option<String>,
     pub project_id: Option<String>,

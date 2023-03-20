@@ -81,9 +81,8 @@ async fn main() -> Result<()> {
     println!("Publishing {} projects", projects.len());
 
     for project in projects {
-        let modrinth_id = project.modrinth.clone().or(config.modrinth.clone());
-        if let Some(modrinth_id) = modrinth_id {
-            upload_to_modrinth(&context, &config, &project, &release, modrinth_id.as_str()).await?;
+        if let Some(settings) = project.get_modrinth(&config) {
+            upload_to_modrinth(&context, &config, &project, &release, settings).await?;
         }
 
         let curseforge_id = project.curseforge.clone().or(config.curseforge.clone());
