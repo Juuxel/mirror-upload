@@ -61,7 +61,7 @@ pub async fn upload_to_modrinth(
             .map(|loader| loader.modrinth_id().to_string())
             .collect(),
         featured: false,
-        project_id: settings.project.to_string(),
+        project_id: settings.project_id.clone(),
         file_parts,
         primary_file,
     };

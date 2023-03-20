@@ -23,7 +23,7 @@ file_regex = "^.+$" # Regex string to filter uploaded GitHub assets (optional)
 release_level = "release" # "release", "beta" or "alpha" (optional)
 
 [modrinth] # top-level Modrinth settings (optional)
-project = "xyzw"
+project_id = "xyzw"
 
 [[modrinth.dependencies]] # a top-level Modrinth dependency
 project_id = "abcd1"

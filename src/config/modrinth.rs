@@ -9,6 +9,6 @@ use crate::modrinth::Dependency;
 
 #[derive(Deserialize, Clone)]
 pub struct ModrinthSettings {
-    pub project: String,
+    pub project_id: String,
     pub dependencies: Option<Vec<Dependency>>,
 }
