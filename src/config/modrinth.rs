@@ -4,8 +4,8 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-use serde::Deserialize;
 use crate::modrinth::Dependency;
+use serde::Deserialize;
 
 #[derive(Deserialize, Clone)]
 pub struct ModrinthSettings {

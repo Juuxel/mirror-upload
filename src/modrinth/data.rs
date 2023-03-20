@@ -12,7 +12,7 @@ pub enum DependencyType {
     Required,
     Optional,
     Incompatible,
-    Embedded
+    Embedded,
 }
 
 impl Default for DependencyType {
@@ -35,5 +35,5 @@ pub struct Dependency {
 pub enum VersionType {
     Release,
     Beta,
-    Alpha
+    Alpha,
 }

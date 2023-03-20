@@ -19,7 +19,8 @@ pub struct Release {
 
 impl Release {
     pub fn get_assets(&self, file_regex: &Option<Regex>) -> Vec<&Asset> {
-        self.assets.iter()
+        self.assets
+            .iter()
             .filter(|asset| {
                 if let Some(regex) = &file_regex {
                     regex.is_match(asset.name.as_str())
@@ -39,21 +40,27 @@ pub struct Asset {
 
 pub struct Repo {
     pub owner: String,
-    pub name: String
+    pub name: String,
 }
 
 impl Repo {
-    pub fn parse<T>(str: T) -> Result<Repo> where T: AsRef<str> {
+    pub fn parse<T>(str: T) -> Result<Repo>
+    where
+        T: AsRef<str>,
+    {
         let str = str.as_ref();
         let parts: Vec<&str> = str.splitn(2, '/').collect();
 
         if parts.len() != 2 {
-            return Err(miette!("Expected GitHub repository name in the format 'owner/repo', found {}", str));
+            return Err(miette!(
+                "Expected GitHub repository name in the format 'owner/repo', found {}",
+                str
+            ));
         }
 
         Ok(Repo {
             owner: parts[0].into(),
-            name: parts[1].into()
+            name: parts[1].into(),
         })
     }
 }

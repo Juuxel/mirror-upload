@@ -11,7 +11,7 @@ use serde::{Deserialize, Serialize};
 pub enum ReleaseType {
     Release,
     Beta,
-    Alpha
+    Alpha,
 }
 
 #[derive(Deserialize)]
@@ -30,7 +30,7 @@ pub struct GameVersion {
 
 #[derive(Serialize)]
 pub struct Relations {
-    pub projects: Vec<ProjectRelation>
+    pub projects: Vec<ProjectRelation>,
 }
 
 #[derive(Serialize, Deserialize, Clone)]

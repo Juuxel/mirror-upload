@@ -5,14 +5,14 @@
  */
 
 use async_trait::async_trait;
-use miette::{Result};
+use miette::Result;
 use reqwest::Client;
 
 pub use crate::config::Secrets;
 
 pub struct Context {
     pub client: Client,
-    pub secrets: Secrets
+    pub secrets: Secrets,
 }
 
 #[async_trait]

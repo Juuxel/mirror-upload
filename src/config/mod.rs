@@ -4,7 +4,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-use miette::{IntoDiagnostic, miette, Result};
+use miette::{miette, IntoDiagnostic, Result};
 use regex::Regex;
 use serde::Deserialize;
 
@@ -64,30 +64,33 @@ impl Project {
     }
 
     pub fn get_regex(&self, config: &Config) -> Result<Option<Regex>> {
-        let regex =
-            if let Some(regex) = self.file_regex.clone().or(config.file_regex.clone()) {
-                let regex = Regex::new(regex.as_str()).into_diagnostic()?;
-                Some(regex)
-            } else {
-                None
-            };
+        let regex = if let Some(regex) = self.file_regex.clone().or(config.file_regex.clone()) {
+            let regex = Regex::new(regex.as_str()).into_diagnostic()?;
+            Some(regex)
+        } else {
+            None
+        };
         Ok(regex)
     }
 
     pub fn get_game_versions(&self, config: &Config) -> Result<Vec<String>> {
-        self.game_versions.clone()
+        self.game_versions
+            .clone()
             .or_else(|| config.game_versions.clone())
             .ok_or(miette!("No game versions defined!"))
     }
 
     pub fn get_loaders(&self, config: &Config) -> Result<Vec<Loader>> {
-        self.loaders.clone()
+        self.loaders
+            .clone()
             .or_else(|| config.loaders.clone())
             .ok_or(miette!("No loaders defined!"))
     }
 
     pub fn get_curseforge<'a>(&'a self, config: &'a Config) -> Option<&CurseForgeSettings> {
-        self.curseforge.as_ref().or_else(|| config.curseforge.as_ref())
+        self.curseforge
+            .as_ref()
+            .or_else(|| config.curseforge.as_ref())
     }
 
     pub fn get_modrinth<'a>(&'a self, config: &'a Config) -> Option<&ModrinthSettings> {
@@ -106,7 +109,7 @@ pub struct Secrets {
 pub enum ReleaseLevel {
     Release,
     Beta,
-    Alpha
+    Alpha,
 }
 
 impl ReleaseLevel {
@@ -114,7 +117,7 @@ impl ReleaseLevel {
         match self {
             Self::Release => ReleaseType::Release,
             Self::Beta => ReleaseType::Beta,
-            Self::Alpha => ReleaseType::Alpha
+            Self::Alpha => ReleaseType::Alpha,
         }
     }
 
@@ -122,7 +125,7 @@ impl ReleaseLevel {
         match self {
             Self::Release => VersionType::Release,
             Self::Beta => VersionType::Beta,
-            Self::Alpha => VersionType::Alpha
+            Self::Alpha => VersionType::Alpha,
         }
     }
 
@@ -154,7 +157,7 @@ impl Loader {
         match self {
             Self::Fabric => "fabric",
             Self::Forge => "forge",
-            Self::Quilt => "quilt"
+            Self::Quilt => "quilt",
         }
     }
 
@@ -162,7 +165,7 @@ impl Loader {
         match self {
             Self::Fabric => "Fabric",
             Self::Forge => "Forge",
-            Self::Quilt => "Quilt"
+            Self::Quilt => "Quilt",
         }
     }
 }

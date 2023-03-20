@@ -4,11 +4,11 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-use serde::Deserialize;
 use crate::curseforge::ProjectRelation;
+use serde::Deserialize;
 
 #[derive(Deserialize, Clone)]
 pub struct CurseForgeSettings {
     pub project_id: String,
-    pub relations: Option<Vec<ProjectRelation>>
+    pub relations: Option<Vec<ProjectRelation>>,
 }

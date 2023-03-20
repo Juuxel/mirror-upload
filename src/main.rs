@@ -8,7 +8,7 @@ use std::env::VarError;
 use std::path::{Path, PathBuf};
 
 use clap::Parser;
-use miette::{IntoDiagnostic, miette, Result, WrapErr};
+use miette::{miette, IntoDiagnostic, Result, WrapErr};
 use reqwest::Client;
 use tokio::fs::File;
 use tokio::io::AsyncReadExt;
@@ -44,9 +44,14 @@ async fn main() -> Result<()> {
         .into_diagnostic()?;
 
     let args = Args::parse();
-    let config_path: PathBuf = args.config.unwrap_or(PathBuf::from("mirror_upload.config.toml"));
-    let config: Config = toml::from_str(read_file(&config_path).await?.as_str()).into_diagnostic()?;
-    let secrets_path = args.secrets.unwrap_or(PathBuf::from("mirror_upload.secrets.toml"));
+    let config_path: PathBuf = args
+        .config
+        .unwrap_or(PathBuf::from("mirror_upload.config.toml"));
+    let config: Config =
+        toml::from_str(read_file(&config_path).await?.as_str()).into_diagnostic()?;
+    let secrets_path = args
+        .secrets
+        .unwrap_or(PathBuf::from("mirror_upload.secrets.toml"));
     let secrets: Secrets = if args.env_secrets || !secrets_path.as_path().exists() {
         Secrets {
             github_token: get_env("GITHUB_TOKEN")?,
@@ -57,15 +62,14 @@ async fn main() -> Result<()> {
     };
 
     let repo = Repo::parse(&config.github)?;
-    let context = Context {
-        client,
-        secrets
-    };
+    let context = Context { client, secrets };
     let release = GetReleaseByTagName {
         owner: repo.owner,
         repo: repo.name,
         tag: args.version_tag,
-    }.request(&context).await?;
+    }
+    .request(&context)
+    .await?;
     println!("Found GitHub release");
 
     if release.assets.is_empty() {
@@ -98,12 +102,16 @@ fn get_env(key: &str) -> Result<String> {
     match result {
         Ok(value) => Ok(value),
         Err(VarError::NotPresent) => Ok(String::from("")),
-        Err(_) => result.into_diagnostic()
-            .wrap_err_with(|| format!("Failed to get environment variable {}", key))
+        Err(_) => result
+            .into_diagnostic()
+            .wrap_err_with(|| format!("Failed to get environment variable {}", key)),
     }
 }
 
-async fn read_file<P>(path: P) -> Result<String> where P: AsRef<Path> {
+async fn read_file<P>(path: P) -> Result<String>
+where
+    P: AsRef<Path>,
+{
     let mut file = File::open(path).await.into_diagnostic()?;
     let mut result = String::new();
     file.read_to_string(&mut result).await.into_diagnostic()?;
