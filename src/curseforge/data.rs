@@ -27,3 +27,31 @@ pub struct GameVersion {
     #[serde(rename = "gameVersionTypeID")]
     pub game_version_type_id: u32,
 }
+
+#[derive(Serialize)]
+pub struct Relations {
+    pub projects: Vec<ProjectRelation>
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+pub struct ProjectRelation {
+    pub slug: String,
+    #[serde(rename = "type", default)]
+    pub relation_type: RelationType,
+}
+
+#[derive(Serialize, Deserialize, Copy, Clone)]
+#[serde(rename_all(serialize = "camelCase", deserialize = "snake_case"))]
+pub enum RelationType {
+    EmbeddedLibrary,
+    Incompatible,
+    OptionalDependency,
+    RequiredDependency,
+    Tool,
+}
+
+impl Default for RelationType {
+    fn default() -> Self {
+        Self::RequiredDependency
+    }
+}

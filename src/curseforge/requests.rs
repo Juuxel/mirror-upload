@@ -9,8 +9,8 @@ use miette::{IntoDiagnostic, miette, Result};
 use reqwest::multipart::Form;
 use serde::{Deserialize, Serialize};
 
-use crate::config::{Config, Project, ReleaseLevel};
-use crate::curseforge::{GameVersion, GameVersionType, ReleaseType};
+use crate::config::{Config, CurseForgeSettings, Project, ReleaseLevel};
+use crate::curseforge::{GameVersion, GameVersionType, Relations, ReleaseType};
 use crate::github::{Asset, GetAsset, Release};
 use crate::requests::{ApiRequest, Context};
 
@@ -68,6 +68,7 @@ pub struct ProjectUploadFileData {
     pub parent_file_id: Option<u32>,
     pub game_versions: Vec<u32>,
     pub release_type: ReleaseType,
+    pub relations: Relations,
 }
 
 #[derive(Deserialize)]
@@ -80,7 +81,7 @@ async fn upload_asset_to_curseforge(
     config: &Config,
     release: &Release,
     asset: &Asset,
-    curseforge_id: &str,
+    settings: &CurseForgeSettings,
     parent_file_id: Option<u32>,
     game_versions: &[u32],
 ) -> Result<ProjectUploadFileResponse> {
@@ -91,6 +92,9 @@ async fn upload_asset_to_curseforge(
         parent_file_id,
         game_versions: Vec::from(game_versions),
         release_type: ReleaseLevel::get(config, release).as_curseforge(),
+        relations: Relations {
+            projects: settings.relations.clone().unwrap_or_default()
+        },
     };
     let mut form = Form::new()
         .text("metadata", serde_json::to_string(&metadata).into_diagnostic()?);
@@ -98,7 +102,7 @@ async fn upload_asset_to_curseforge(
         .attach_to_form(context, form, "file".to_string())
         .await?;
 
-    let url = format!("{}/projects/{}/upload-file", API_URL, curseforge_id);
+    let url = format!("{}/projects/{}/upload-file", API_URL, settings.project_id);
     let response = context.client.post(url)
         .header(AUTH_KEY, &context.secrets.curseforge_token)
         .multipart(form)
@@ -118,7 +122,7 @@ pub async fn upload_to_curseforge(
     config: &Config,
     project: &Project,
     release: &Release,
-    curseforge_id: &str,
+    settings: &CurseForgeSettings,
 ) -> Result<()> {
     println!("Uploading {} to CurseForge", release.tag_name);
 
@@ -156,7 +160,7 @@ pub async fn upload_to_curseforge(
         config,
         release,
         head,
-        curseforge_id,
+        settings,
         None,
         &game_versions,
     ).await?.id;
@@ -167,7 +171,7 @@ pub async fn upload_to_curseforge(
             config,
             release,
             asset,
-            curseforge_id,
+            settings,
             Some(primary_id),
             &game_versions,
         ).await?;

@@ -85,9 +85,8 @@ async fn main() -> Result<()> {
             upload_to_modrinth(&context, &config, &project, &release, settings).await?;
         }
 
-        let curseforge_id = project.curseforge.clone().or(config.curseforge.clone());
-        if let Some(curseforge_id) = curseforge_id {
-            upload_to_curseforge(&context, &config, &project, &release, curseforge_id.as_str()).await?;
+        if let Some(settings) = project.get_curseforge(&config) {
+            upload_to_curseforge(&context, &config, &project, &release, settings).await?;
         }
     }
 

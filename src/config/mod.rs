@@ -8,12 +8,14 @@ use miette::{IntoDiagnostic, miette, Result};
 use regex::Regex;
 use serde::Deserialize;
 
+pub use curseforge::*;
 pub use modrinth::*;
 
 use crate::curseforge::ReleaseType;
 use crate::github::Release;
 use crate::modrinth::VersionType;
 
+mod curseforge;
 mod modrinth;
 
 #[derive(Deserialize, Clone)]
@@ -23,7 +25,7 @@ pub struct Config {
     /// Target loaders
     pub loaders: Option<Vec<Loader>>,
     /// CurseForge project ID
-    pub curseforge: Option<String>,
+    pub curseforge: Option<CurseForgeSettings>,
     /// Modrinth configuration
     pub modrinth: Option<ModrinthSettings>,
     /// Projects
@@ -41,7 +43,7 @@ pub struct Project {
     /// Target loaders
     pub loaders: Option<Vec<Loader>>,
     /// CurseForge project ID
-    pub curseforge: Option<String>,
+    pub curseforge: Option<CurseForgeSettings>,
     /// Modrinth configuration
     pub modrinth: Option<ModrinthSettings>,
     /// Game versions
@@ -82,6 +84,10 @@ impl Project {
         self.loaders.clone()
             .or_else(|| config.loaders.clone())
             .ok_or(miette!("No loaders defined!"))
+    }
+
+    pub fn get_curseforge<'a>(&'a self, config: &'a Config) -> Option<&CurseForgeSettings> {
+        self.curseforge.as_ref().or_else(|| config.curseforge.as_ref())
     }
 
     pub fn get_modrinth<'a>(&'a self, config: &'a Config) -> Option<&ModrinthSettings> {
