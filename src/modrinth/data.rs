@@ -6,19 +6,14 @@
 
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Copy, Clone)]
+#[derive(Serialize, Deserialize, Copy, Clone, Default)]
 #[serde(rename_all = "snake_case")]
 pub enum DependencyType {
+    #[default]
     Required,
     Optional,
     Incompatible,
     Embedded,
-}
-
-impl Default for DependencyType {
-    fn default() -> Self {
-        DependencyType::Required
-    }
 }
 
 #[derive(Serialize, Deserialize, Clone)]

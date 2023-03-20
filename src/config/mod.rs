@@ -90,11 +90,11 @@ impl Project {
     pub fn get_curseforge<'a>(&'a self, config: &'a Config) -> Option<&CurseForgeSettings> {
         self.curseforge
             .as_ref()
-            .or_else(|| config.curseforge.as_ref())
+            .or(config.curseforge.as_ref())
     }
 
     pub fn get_modrinth<'a>(&'a self, config: &'a Config) -> Option<&ModrinthSettings> {
-        self.modrinth.as_ref().or_else(|| config.modrinth.as_ref())
+        self.modrinth.as_ref().or(config.modrinth.as_ref())
     }
 }
 

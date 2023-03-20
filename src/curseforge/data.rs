@@ -40,18 +40,13 @@ pub struct ProjectRelation {
     pub relation_type: RelationType,
 }
 
-#[derive(Serialize, Deserialize, Copy, Clone)]
+#[derive(Serialize, Deserialize, Copy, Clone, Default)]
 #[serde(rename_all(serialize = "camelCase", deserialize = "snake_case"))]
 pub enum RelationType {
     EmbeddedLibrary,
     Incompatible,
     OptionalDependency,
+    #[default]
     RequiredDependency,
     Tool,
-}
-
-impl Default for RelationType {
-    fn default() -> Self {
-        Self::RequiredDependency
-    }
 }
