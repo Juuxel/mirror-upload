@@ -88,9 +88,7 @@ impl Project {
     }
 
     pub fn get_curseforge<'a>(&'a self, config: &'a Config) -> Option<&CurseForgeSettings> {
-        self.curseforge
-            .as_ref()
-            .or(config.curseforge.as_ref())
+        self.curseforge.as_ref().or(config.curseforge.as_ref())
     }
 
     pub fn get_modrinth<'a>(&'a self, config: &'a Config) -> Option<&ModrinthSettings> {
