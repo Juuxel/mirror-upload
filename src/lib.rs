@@ -9,3 +9,4 @@ pub mod curseforge;
 pub mod github;
 pub mod modrinth;
 pub mod requests;
+pub mod template;

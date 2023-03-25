@@ -4,7 +4,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-use miette::{miette, IntoDiagnostic, Result};
+use miette::{miette, IntoDiagnostic, Result, WrapErr};
 use regex::Regex;
 use reqwest::multipart::Form;
 use serde::Serialize;
@@ -13,6 +13,7 @@ use crate::config::{Config, ModrinthSettings, Project, ReleaseLevel};
 use crate::github::{Asset, GetAsset, Release};
 use crate::modrinth::{Dependency, VersionType};
 use crate::requests::Context;
+use crate::template::Template;
 
 pub const API_URL: &str = "https://api.modrinth.com/v2";
 pub const AUTH_KEY: &str = "Authorization";
@@ -45,11 +46,24 @@ pub async fn upload_to_modrinth(
     let assets: Vec<&Asset> = release.get_assets(&file_regex);
     let file_parts: Vec<String> = assets.iter().map(|asset| asset.name.clone()).collect();
 
+    let version_number = if let Some(template) = &settings.version_number {
+        Template::parse(template)
+            .and_then(|template| {
+                template.resolve(|key| match key {
+                    "tag" => Some(&release.tag_name),
+                    _ => None,
+                })
+            })
+            .wrap_err("Could not compute Modrinth version number")?
+    } else {
+        release.tag_name.clone()
+    };
+
     let primary_file = file_parts.first().unwrap().to_string();
     let name = release.name.clone().unwrap_or(release.tag_name.clone());
     let data = CreateVersionData {
         name,
-        version_number: release.tag_name.clone(),
+        version_number,
         changelog: release.body.clone(),
         dependencies: settings.dependencies.clone().unwrap_or(vec![]),
         game_versions: project.get_game_versions(config)?,

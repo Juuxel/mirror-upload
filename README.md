@@ -46,10 +46,22 @@ file_regex = "^.+$" # Regex string to filter uploaded GitHub assets (optional)
 
 [projects.modrinth] # project-level Modrinth settings (this table overrides the top-level settings if present)
 project_id = "wzyx"
+version_number = "$tag" # a version number template that supports variable $tag = git version tag (optional)
 
 [projects.curseforge] # project-level CurseForge settings (this table overrides the top-level settings if present)
 project_id = "4321"
 ```
+
+### Templates
+
+Templates use a simple [Groovy-like](http://groovy-lang.org/templating.html) format:
+- `$xyz` is a template reference to variable `xyz`
+- `${ xyz }` is also a template reference to variable `xyz`
+- `\\` is an escaped backslash
+- `\$` is an escaped dollar sign
+
+Note that unlike Groovy, Mirror Upload's template engine doesn't support
+executing any kind of code, nor the JSP-style `<% %>` syntax.
 
 ## Secrets
 
