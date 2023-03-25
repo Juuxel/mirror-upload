@@ -101,13 +101,16 @@ impl TemplateParser {
     where
         M: AsRef<str>,
     {
-        let length = self.byte_offset - start_offset;
         ParseError {
             msg: msg.as_ref().to_string(),
             src: self.input.iter().collect(),
-            span: (start_offset, length).into(),
+            span: self.span_from(start_offset),
             cause: None,
         }
+    }
+
+    fn span_from(&self, start_offset: usize) -> SourceSpan {
+        (start_offset, self.byte_offset - start_offset).into()
     }
 
     fn peek(&self) -> ParseResult<char> {
@@ -127,7 +130,9 @@ impl TemplateParser {
     }
 
     fn parse_escape(&mut self) -> ParseResult<String> {
-        let c = self.next().add_context("Could not read escape")?;
+        let c = self
+            .next()
+            .map_err(|e| e.and_then("Could not read escape"))?;
         let result: String = match c {
             '\\' => '\\'.into(),
             '$' => '$'.into(),
@@ -187,7 +192,10 @@ impl TemplateParser {
 
         match self.next() {
             Ok('}') => Ok(TemplatePart::Variable(var_name)),
-            _ => Err(self.parse_error("Unclosed brackets", start)),
+            Ok(_) => Err(self.parse_error("Unclosed brackets", start)),
+            Err(err) => Err(err
+                .and_then("Unclosed brackets")
+                .with_span(self.span_from(start))),
         }
     }
 }
@@ -205,30 +213,20 @@ struct ParseError {
 }
 
 impl ParseError {
-    fn and_then<M>(self, msg: M) -> ParseError
+    fn and_then<M>(self, msg: M) -> Self
     where
         M: AsRef<str>,
     {
-        ParseError {
+        Self {
             msg: msg.as_ref().to_string(),
             src: self.src.clone(),
             span: self.span,
             cause: Some(Box::new(self)),
         }
     }
-}
 
-trait ParseResultExt {
-    fn add_context<M>(self, msg: M) -> Self
-    where
-        M: AsRef<str>;
-}
-
-impl<T> ParseResultExt for ParseResult<T> {
-    fn add_context<M>(self, msg: M) -> Self
-    where
-        M: AsRef<str>,
-    {
-        self.map_err(|err| err.and_then(msg))
+    fn with_span(mut self, span: SourceSpan) -> Self {
+        self.span = span;
+        self
     }
 }
