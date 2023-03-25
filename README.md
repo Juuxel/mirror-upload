@@ -1,4 +1,4 @@
-# Mirror Uploader
+# Mirror Upload
 
 A tool that mirrors GitHub releases onto Modrinth and CurseForge.
 
