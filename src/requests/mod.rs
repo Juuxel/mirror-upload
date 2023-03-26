@@ -14,7 +14,7 @@ use miette::{IntoDiagnostic, Result};
 use reqwest::{Body, Client, Response};
 use serde::de::DeserializeOwned;
 use std::cmp::min;
-use thiserror::Error;
+use std::convert::Infallible;
 
 pub use crate::config::Secrets;
 use crate::error::MuError;
@@ -75,10 +75,6 @@ pub async fn json_with_progress<T: DeserializeOwned>(
 
 const CHUNK_SIZE: usize = 8192;
 
-#[derive(Error, Debug)]
-#[error("should never occur")]
-struct NeverError;
-
 pub fn body_with_progress(context: &Context, bytes: Bytes) -> Body {
     let progress_bar = context
         .progress
@@ -91,7 +87,7 @@ pub fn body_with_progress(context: &Context, bytes: Bytes) -> Body {
             let start = i;
             let end = min(start + CHUNK_SIZE, bytes.len());
             i += end - start;
-            yield Ok(bytes.slice(start..end)) as Result<Bytes, NeverError>;
+            yield Ok(bytes.slice(start..end)) as Result<Bytes, Infallible>;
             progress_bar.set_position(i as u64);
         }
 
