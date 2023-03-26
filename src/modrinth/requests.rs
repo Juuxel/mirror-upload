@@ -63,7 +63,7 @@ pub async fn upload_to_modrinth(
     let name = release.name.clone().unwrap_or(release.tag_name.clone());
     let data = CreateVersionData {
         name,
-        version_number,
+        version_number: version_number.clone(), // TODO: Take these by reference instead
         changelog: release.body.clone(),
         dependencies: settings.dependencies.clone().unwrap_or(vec![]),
         game_versions: project.get_game_versions(config)?,
@@ -104,6 +104,19 @@ pub async fn upload_to_modrinth(
             response.text().await.into_diagnostic()?
         ));
     }
+
+    // Print a link to the version. We can use the project ID
+    // on Modrinth if the slug is missing.
+    context
+        .progress
+        .println(format!(
+            "{} https://modrinth.com/mod/{}/version/{}",
+            console::style("Link:").bold().blue(),
+            settings.slug.as_ref().unwrap_or(&settings.project_id),
+            version_number
+        ))
+        .into_diagnostic()
+        .wrap_err("Could not print link to release")?;
 
     Ok(())
 }

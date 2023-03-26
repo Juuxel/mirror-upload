@@ -23,6 +23,7 @@ release_level = "release" # "release", "beta" or "alpha" (optional)
 
 [modrinth] # top-level Modrinth settings (optional)
 project_id = "xyzw"
+slug = "mymod" # the project slug, used for printing links (optional)
 
 [[modrinth.dependencies]] # a top-level Modrinth dependency
 project_id = "abcd1"
@@ -33,6 +34,7 @@ dependency_type = "optional" # or required, embedded or incompatible (required i
 
 [curseforge] # top-level CurseForge settings (optional)
 project_id = "1234"
+slug = "mymod" # the project slug, used for printing links (optional)
 
 [[curseforge.relations]]
 slug = "hello-world"

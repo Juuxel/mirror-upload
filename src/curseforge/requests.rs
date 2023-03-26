@@ -6,7 +6,7 @@
 
 use async_trait::async_trait;
 use indicatif::ProgressBar;
-use miette::{miette, IntoDiagnostic, Result};
+use miette::{miette, IntoDiagnostic, Result, WrapErr};
 use reqwest::header::CONTENT_TYPE;
 use serde::{Deserialize, Serialize};
 
@@ -222,6 +222,20 @@ pub async fn upload_to_curseforge(
     }
 
     bar.finish_and_clear();
+
+    // Let's print a link to the version if we have the slug.
+    if let Some(slug) = &settings.slug {
+        context
+            .progress
+            .println(format!(
+                "{} https://curseforge.com/minecraft/mc-mods/{}/files/{}",
+                console::style("Link:").bold().blue(),
+                slug,
+                primary_id
+            ))
+            .into_diagnostic()
+            .wrap_err("Could not print link to release")?;
+    }
 
     Ok(())
 }

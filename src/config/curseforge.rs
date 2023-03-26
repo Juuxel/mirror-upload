@@ -11,4 +11,5 @@ use serde::Deserialize;
 pub struct CurseForgeSettings {
     pub project_id: String,
     pub relations: Option<Vec<ProjectRelation>>,
+    pub slug: Option<String>,
 }

@@ -12,4 +12,5 @@ pub struct ModrinthSettings {
     pub project_id: String,
     pub dependencies: Option<Vec<Dependency>>,
     pub version_number: Option<String>,
+    pub slug: Option<String>,
 }
