@@ -30,7 +30,7 @@ impl Form {
     /// Gets the content type of this form, including the boundary.
     pub fn content_type(&self) -> String {
         format!(
-            "multipart/form-data; boundary=\"{}\"",
+            "multipart/form-data; boundary={}",
             quote(&self.boundary)
         )
     }
@@ -70,14 +70,12 @@ impl Form {
             bytes.put_slice(dashes);
             bytes.put_slice(boundary);
             bytes.put_slice(crlf);
-            bytes.put_slice(b"Content-Disposition: form-data; name=\"");
+            bytes.put_slice(b"Content-Disposition: form-data; name=");
             bytes.put_slice(quote(&key.name).as_bytes());
-            bytes.put_slice(b"\"");
 
             if let Some(file_name) = &key.file_name {
-                bytes.put_slice(b"; filename=\"");
+                bytes.put_slice(b"; filename=");
                 bytes.put_slice(quote(file_name).as_bytes());
-                bytes.put_slice(b"\"");
             }
 
             bytes.put_slice(crlf);
@@ -94,9 +92,10 @@ impl Form {
     }
 }
 
-/// Quotes the contents of a string according to RFC 822, 3.3: quoted-string.
+/// Quotes a string according to RFC 822, 3.3: quoted-string.
 fn quote(str: &str) -> String {
-    let mut result = String::new();
+    let mut result = String::with_capacity(str.len() + 2);
+    result.push('"');
 
     for c in str.chars() {
         // See RFC 822 3.3: quoted-string
@@ -107,5 +106,6 @@ fn quote(str: &str) -> String {
         result.push(c);
     }
 
+    result.push('"');
     result
 }
