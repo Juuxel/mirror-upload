@@ -104,7 +104,9 @@ pub struct Secrets {
 
 impl Secrets {
     pub fn curseforge_token_or_err(&self) -> Result<&String> {
-        self.curseforge_token.as_ref().ok_or_else(|| miette!("Missing CurseForge token"))
+        self.curseforge_token
+            .as_ref()
+            .ok_or_else(|| miette!("Missing CurseForge token"))
     }
 }
 

@@ -4,9 +4,9 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+use miette::{Diagnostic, LabeledSpan, Report, SourceCode, SourceSpan};
 use std::error::Error;
 use std::fmt::Display;
-use miette::{Diagnostic, LabeledSpan, Report, SourceCode, SourceSpan};
 use thiserror::Error;
 
 /// An error that is created using the builder pattern.
@@ -51,8 +51,7 @@ impl MuError {
     }
 
     /// Sets the source code of this error.
-    pub fn source_code<O: ToOption<String>>(mut self, source_code: O) -> Self
-    {
+    pub fn source_code<O: ToOption<String>>(mut self, source_code: O) -> Self {
         self.source_code = source_code.to_option();
         self
     }
@@ -64,8 +63,7 @@ impl MuError {
     }
 
     /// Sets the help message of this error.
-    pub fn help<O: ToOption<String>>(mut self, help: O) -> Self
-    {
+    pub fn help<O: ToOption<String>>(mut self, help: O) -> Self {
         self.help = help.to_option();
         self
     }
@@ -73,7 +71,7 @@ impl MuError {
     /// Sets the cause of this error.
     pub fn cause<E>(mut self, cause: E) -> Self
     where
-        E: Error + Send + Sync + 'static
+        E: Error + Send + Sync + 'static,
     {
         self.cause = Some(Box::new(cause));
         self
@@ -89,7 +87,9 @@ impl MuError {
 // optional source codes.
 impl Diagnostic for MuError {
     fn help<'a>(&'a self) -> Option<Box<dyn Display + 'a>> {
-        self.help.as_ref().map(|help| Box::new(help) as Box<dyn Display + 'a>)
+        self.help
+            .as_ref()
+            .map(|help| Box::new(help) as Box<dyn Display + 'a>)
     }
 
     fn source_code(&self) -> Option<&dyn SourceCode> {
@@ -100,7 +100,7 @@ impl Diagnostic for MuError {
         }
     }
 
-    fn labels(&self) -> Option<Box<dyn Iterator<Item=LabeledSpan> + '_>> {
+    fn labels(&self) -> Option<Box<dyn Iterator<Item = LabeledSpan> + '_>> {
         self.span.map(|span| {
             let labeled = LabeledSpan::new_with_span(Some("here".to_string()), span);
             Box::new(vec![labeled].into_iter()) as Box<dyn Iterator<Item = LabeledSpan> + '_>

@@ -45,7 +45,9 @@ async fn main() -> Result<()> {
         .into_diagnostic()?;
 
     let args = Args::parse();
-    let secrets = get_secrets(&args).await.wrap_err("Could not find secrets")?;
+    let secrets = get_secrets(&args)
+        .await
+        .wrap_err("Could not find secrets")?;
     let config_path: PathBuf = args
         .config
         .unwrap_or(PathBuf::from("mirror_upload.config.toml"));
@@ -91,7 +93,9 @@ async fn main() -> Result<()> {
 async fn get_secrets(args: &Args) -> Result<Secrets> {
     let secrets: Secrets = if let Some(path) = &args.secrets {
         if args.env_secrets {
-            return Err(miette!("Cannot set both -s and --env-secrets at the same time"));
+            return Err(miette!(
+                "Cannot set both -s and --env-secrets at the same time"
+            ));
         } else if !path.as_path().exists() {
             let path_str = path.as_os_str().to_string_lossy();
             return Err(miette!("Secrets file {} does not exist", path_str));
@@ -132,7 +136,7 @@ fn get_env(key: &str) -> Result<Option<String>> {
         Err(err) => Err(
             MuError::new(format!("Failed to get environment variable {}", key))
                 .cause(err)
-                .to_report()
+                .to_report(),
         ),
     }
 }

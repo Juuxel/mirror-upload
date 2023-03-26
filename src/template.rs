@@ -4,8 +4,8 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-use miette::{miette, Result, SourceSpan, WrapErr};
 use crate::error::MuError;
+use miette::{miette, Result, SourceSpan, WrapErr};
 
 pub struct Template {
     parts: Vec<TemplatePart>,
