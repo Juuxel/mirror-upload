@@ -23,8 +23,7 @@ impl Form {
     pub fn new() -> Self {
         Form {
             fields: Vec::new(),
-            // surely no one would include such a ridiculous string in a file
-            boundary: "-sdsaddsfgdghhskjtretyetertertedh?-".to_string(),
+            boundary: uuid::Uuid::new_v4().to_string(),
         }
     }
 
