@@ -90,7 +90,7 @@ async fn main() -> Result<()> {
 
         if let Some(settings) = project.get_modrinth(&config) {
             let bar = context.progress.add(ProgressBar::new_spinner());
-            bar.set_message("Uploading to Modrinth...");
+            bar.set_message(format!("Uploading to {}...", console::style("Modrinth").green()));
             bar.set_style(simple_progress_spinner_style());
             upload_to_modrinth(&context, &config, &project, &release, settings).await?;
             bar.finish_and_clear();
@@ -98,7 +98,7 @@ async fn main() -> Result<()> {
 
         if let Some(settings) = project.get_curseforge(&config) {
             let bar = context.progress.add(ProgressBar::new_spinner());
-            bar.set_message("Uploading to CurseForge...");
+            bar.set_message(format!("Uploading to {}...", console::style("CurseForge").red()));
             bar.set_style(simple_progress_spinner_style());
             upload_to_curseforge(&context, &config, &project, &release, settings).await?;
             bar.finish_and_clear();

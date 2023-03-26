@@ -700,6 +700,7 @@ dependencies = [
  "async-trait",
  "bytes",
  "clap",
+ "console",
  "futures",
  "indicatif",
  "miette",
