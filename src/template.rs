@@ -4,8 +4,8 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-use miette::{miette, Diagnostic, Result, SourceSpan, WrapErr};
-use thiserror::Error;
+use miette::{miette, Result, SourceSpan, WrapErr};
+use crate::error::MuError;
 
 pub struct Template {
     parts: Vec<TemplatePart>,
@@ -49,7 +49,7 @@ enum TemplatePart {
     Variable(String),
 }
 
-type ParseResult<T> = Result<T, ParseError>;
+type ParseResult<T> = Result<T, MuError>;
 
 struct TemplateParser {
     input: Vec<char>,
@@ -103,16 +103,13 @@ impl TemplateParser {
         c.is_ascii_alphanumeric() || c == '_' || c == '.'
     }
 
-    fn parse_error<M>(&self, msg: M, start_offset: usize) -> ParseError
+    fn parse_error<M>(&self, msg: M, start_offset: usize) -> MuError
     where
         M: AsRef<str>,
     {
-        ParseError {
-            msg: msg.as_ref().to_string(),
-            src: self.input.iter().collect(),
-            span: self.span_from(start_offset),
-            cause: None,
-        }
+        MuError::new(msg)
+            .source_code(self.input.iter().collect::<String>())
+            .span(self.span_from(start_offset))
     }
 
     fn span_from(&self, start_offset: usize) -> SourceSpan {
@@ -201,38 +198,7 @@ impl TemplateParser {
             Ok(_) => Err(self.parse_error("Unclosed brackets", start)),
             Err(err) => Err(err
                 .and_then("Unclosed brackets")
-                .with_span(self.span_from(start))),
+                .span(self.span_from(start))),
         }
-    }
-}
-
-#[derive(Error, Debug, Diagnostic)]
-#[error("{msg}")]
-struct ParseError {
-    msg: String,
-    #[source_code]
-    src: String,
-    #[label("here")]
-    span: SourceSpan,
-    #[source]
-    cause: Option<Box<ParseError>>,
-}
-
-impl ParseError {
-    fn and_then<M>(self, msg: M) -> Self
-    where
-        M: AsRef<str>,
-    {
-        Self {
-            msg: msg.as_ref().to_string(),
-            src: self.src.clone(),
-            span: self.span,
-            cause: Some(Box::new(self)),
-        }
-    }
-
-    fn with_span(mut self, span: SourceSpan) -> Self {
-        self.span = span;
-        self
     }
 }

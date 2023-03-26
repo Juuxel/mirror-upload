@@ -6,6 +6,7 @@
 
 pub mod config;
 pub mod curseforge;
+pub mod error;
 pub mod github;
 pub mod modrinth;
 pub mod requests;

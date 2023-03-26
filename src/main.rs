@@ -5,18 +5,17 @@
  */
 
 use std::env::VarError;
-use std::error::Error;
 use std::path::{Path, PathBuf};
 
 use clap::Parser;
-use miette::{miette, IntoDiagnostic, Result, WrapErr, Diagnostic, Report};
+use miette::{miette, IntoDiagnostic, Result, WrapErr};
 use reqwest::Client;
-use thiserror::Error;
 use tokio::fs::File;
 use tokio::io::AsyncReadExt;
 
 use mirror_upload::config::{Config, Project};
 use mirror_upload::curseforge::upload_to_curseforge;
+use mirror_upload::error::MuError;
 use mirror_upload::github::{GetReleaseByTagName, Repo};
 use mirror_upload::modrinth::upload_to_modrinth;
 use mirror_upload::requests::{ApiRequest, Context, Secrets};
@@ -107,16 +106,13 @@ async fn get_secrets(args: &Args) -> Result<Secrets> {
             Secrets {
                 github_token: get_env("GITHUB_TOKEN")?
                     .ok_or_else(|| {
-                        let error = SecretsError {
-                            msg: "Missing environment variable GITHUB_TOKEN".to_string(),
-                            source: None,
-                            help: if !args.env_secrets {
+                        MuError::new("Missing environment variable GITHUB_TOKEN")
+                            .help(if !args.env_secrets {
                                 Some("Using environment variables because ./mirror_upload.secrets.toml doesn't exist")
                             } else {
                                 None
-                            },
-                        };
-                        Report::from(error)
+                            })
+                            .to_report()
                     })?,
                 curseforge_token: get_env("CURSEFORGE_TOKEN")?,
             }
@@ -128,17 +124,15 @@ async fn get_secrets(args: &Args) -> Result<Secrets> {
     Ok(secrets)
 }
 
-fn get_env(key: &str) -> Result<Option<String>, SecretsError> {
+fn get_env(key: &str) -> Result<Option<String>> {
     let result = std::env::var(key);
     match result {
         Ok(value) => Ok(Some(value)),
         Err(VarError::NotPresent) => Ok(None),
         Err(err) => Err(
-            SecretsError {
-                msg: format!("Failed to get environment variable {}", key),
-                source: Some(Box::new(err)),
-                help: None,
-            }
+            MuError::new(format!("Failed to get environment variable {}", key))
+                .cause(err)
+                .to_report()
         ),
     }
 }
@@ -151,13 +145,4 @@ where
     let mut result = String::new();
     file.read_to_string(&mut result).await.into_diagnostic()?;
     Ok(result)
-}
-
-#[derive(Error, Debug, Diagnostic)]
-#[error("{msg}")]
-struct SecretsError {
-    msg: String,
-    source: Option<Box<dyn Error + Send + Sync>>,
-    #[help]
-    help: Option<&'static str>,
 }
