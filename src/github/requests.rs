@@ -6,10 +6,10 @@
 
 use async_trait::async_trait;
 use miette::{miette, IntoDiagnostic, Result};
-use reqwest::multipart::{Form, Part};
 
 use crate::github::{Asset, Release};
-use crate::requests::{ApiRequest, Context};
+use crate::requests::{ApiRequest, bytes_with_progress, Context, json_with_progress};
+use crate::requests::multipart::Form;
 
 const API_URL: &str = "https://api.github.com";
 const API_VERSION_KEY: &str = "X-GitHub-Api-Version";
@@ -51,7 +51,7 @@ impl ApiRequest<Release> for GetReleaseByTagName {
             ));
         }
 
-        response.json::<Release>().await.into_diagnostic()
+        json_with_progress(context, response).await
     }
 }
 
@@ -61,13 +61,12 @@ impl GetAsset<'_> {
     pub async fn attach_to_form(
         &self,
         context: &Context,
-        form: Form,
+        form: &mut Form,
         field_name: String,
-    ) -> Result<Form> {
-        println!("File: {}", self.0.name);
+    ) -> Result<()> {
         let asset_bytes = self.request(context).await?;
-        let part = Part::stream(asset_bytes).file_name(self.0.name.clone());
-        Ok(form.part(field_name, part))
+        form.file(field_name, &self.0.name, asset_bytes);
+        Ok(())
     }
 }
 
@@ -93,6 +92,6 @@ impl ApiRequest<bytes::Bytes> for GetAsset<'_> {
             ));
         }
 
-        response.bytes().await.into_diagnostic()
+        bytes_with_progress(context, response).await
     }
 }

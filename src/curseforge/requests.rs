@@ -5,14 +5,17 @@
  */
 
 use async_trait::async_trait;
+use indicatif::ProgressBar;
 use miette::{miette, IntoDiagnostic, Result};
-use reqwest::multipart::Form;
+use reqwest::header::CONTENT_TYPE;
 use serde::{Deserialize, Serialize};
 
 use crate::config::{Config, CurseForgeSettings, Project, ReleaseLevel};
 use crate::curseforge::{GameVersion, GameVersionType, Relations, ReleaseType};
 use crate::github::{Asset, GetAsset, Release};
-use crate::requests::{ApiRequest, Context};
+use crate::progress::simple_progress_bar_style;
+use crate::requests::{ApiRequest, body_with_progress, Context};
+use crate::requests::multipart::Form;
 
 const API_URL: &str = "https://minecraft.curseforge.com/api";
 const AUTH_KEY: &str = "X-Api-Token";
@@ -111,12 +114,13 @@ async fn upload_asset_to_curseforge(
             projects: settings.relations.clone().unwrap_or_default(),
         },
     };
-    let mut form = Form::new().text(
+    let mut form = Form::new();
+    form.text(
         "metadata",
         serde_json::to_string(&metadata).into_diagnostic()?,
     );
-    form = GetAsset(asset)
-        .attach_to_form(context, form, "file".to_string())
+    GetAsset(asset)
+        .attach_to_form(context, &mut form, "file".to_string())
         .await?;
 
     let url = format!("{}/projects/{}/upload-file", API_URL, settings.project_id);
@@ -124,7 +128,8 @@ async fn upload_asset_to_curseforge(
         .client
         .post(url)
         .header(AUTH_KEY, context.secrets.curseforge_token_or_err()?)
-        .multipart(form)
+        .header(CONTENT_TYPE, form.content_type())
+        .body(body_with_progress(context, form.bytes()))
         .send()
         .await
         .into_diagnostic()?;
@@ -151,8 +156,6 @@ pub async fn upload_to_curseforge(
     release: &Release,
     settings: &CurseForgeSettings,
 ) -> Result<()> {
-    println!("Uploading {} to CurseForge", release.tag_name);
-
     let allowed_game_version_types: Vec<u32> = GameVersionTypes
         .request(context)
         .await?
@@ -184,6 +187,10 @@ pub async fn upload_to_curseforge(
     let file_regex = project.get_regex(config)?;
     let assets = release.get_assets(&file_regex);
 
+    let bar = context.progress.add(ProgressBar::new(assets.len() as u64 + 1));
+    bar.set_position(1);
+    bar.set_message("Uploading files...");
+    bar.set_style(simple_progress_bar_style());
     let head = assets.first().unwrap();
     let tail: Vec<_> = assets.iter().skip(1).collect();
     let primary_id = upload_asset_to_curseforge(
@@ -199,6 +206,7 @@ pub async fn upload_to_curseforge(
     .id;
 
     for asset in tail {
+        bar.inc(1);
         upload_asset_to_curseforge(
             context,
             config,
@@ -210,6 +218,8 @@ pub async fn upload_to_curseforge(
         )
         .await?;
     }
+
+    bar.finish_and_clear();
 
     Ok(())
 }

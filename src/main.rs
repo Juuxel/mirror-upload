@@ -8,6 +8,7 @@ use std::env::VarError;
 use std::path::{Path, PathBuf};
 
 use clap::Parser;
+use indicatif::{MultiProgress, ProgressBar};
 use miette::{miette, IntoDiagnostic, Result, WrapErr};
 use reqwest::Client;
 use tokio::fs::File;
@@ -18,6 +19,7 @@ use mirror_upload::curseforge::upload_to_curseforge;
 use mirror_upload::error::MuError;
 use mirror_upload::github::{GetReleaseByTagName, Repo};
 use mirror_upload::modrinth::upload_to_modrinth;
+use mirror_upload::progress::simple_progress_spinner_style;
 use mirror_upload::requests::{ApiRequest, Context, Secrets};
 
 #[derive(Parser)]
@@ -55,7 +57,11 @@ async fn main() -> Result<()> {
         toml::from_str(read_file(&config_path).await?.as_str()).into_diagnostic()?;
 
     let repo = Repo::parse(&config.github)?;
-    let context = Context { client, secrets };
+    let context = Context { client, secrets, progress: MultiProgress::new() };
+
+    let github_bar = context.progress.add(ProgressBar::new_spinner());
+    github_bar.set_message("Fetching GitHub release...");
+    github_bar.set_style(simple_progress_spinner_style());
     let release = GetReleaseByTagName {
         owner: repo.owner,
         repo: repo.name,
@@ -63,7 +69,7 @@ async fn main() -> Result<()> {
     }
     .request(&context)
     .await?;
-    println!("Found GitHub release");
+    github_bar.finish_with_message("Found GitHub release!");
 
     if release.assets.is_empty() {
         return Err(miette!("No assets in GitHub release!"));
@@ -75,17 +81,33 @@ async fn main() -> Result<()> {
         vec![Project::empty()]
     };
 
-    println!("Publishing {} projects", projects.len());
+    let project_count = projects.len();
+    let project_bar = context.progress.add(ProgressBar::new_spinner());
+    project_bar.set_style(simple_progress_spinner_style());
 
-    for project in projects {
+    for (i, project) in projects.iter().enumerate() {
+        project_bar.set_message(format!("Publishing project {}/{}", i + 1, project_count));
+
         if let Some(settings) = project.get_modrinth(&config) {
+            let bar = context.progress.add(ProgressBar::new_spinner());
+            bar.set_message("Uploading to Modrinth...");
+            bar.set_style(simple_progress_spinner_style());
             upload_to_modrinth(&context, &config, &project, &release, settings).await?;
+            bar.finish_and_clear();
         }
 
         if let Some(settings) = project.get_curseforge(&config) {
+            let bar = context.progress.add(ProgressBar::new_spinner());
+            bar.set_message("Uploading to CurseForge...");
+            bar.set_style(simple_progress_spinner_style());
             upload_to_curseforge(&context, &config, &project, &release, settings).await?;
+            bar.finish_and_clear();
         }
+
+        project_bar.inc(1);
     }
+
+    project_bar.finish_with_message(format!("Published {} projects", project_count));
 
     Ok(())
 }

@@ -6,13 +6,14 @@
 
 use miette::{miette, IntoDiagnostic, Result, WrapErr};
 use regex::Regex;
-use reqwest::multipart::Form;
+use reqwest::header::CONTENT_TYPE;
 use serde::Serialize;
 
 use crate::config::{Config, ModrinthSettings, Project, ReleaseLevel};
 use crate::github::{Asset, GetAsset, Release};
 use crate::modrinth::{Dependency, VersionType};
-use crate::requests::Context;
+use crate::requests::{body_with_progress, Context};
+use crate::requests::multipart::Form;
 use crate::template::Template;
 
 pub const API_URL: &str = "https://api.modrinth.com/v2";
@@ -40,7 +41,6 @@ pub async fn upload_to_modrinth(
     release: &Release,
     settings: &ModrinthSettings,
 ) -> Result<()> {
-    println!("Uploading {} to Modrinth", release.tag_name);
     let mut form = Form::new();
     let file_regex: Option<Regex> = project.get_regex(config)?;
     let assets: Vec<&Asset> = release.get_assets(&file_regex);
@@ -78,21 +78,21 @@ pub async fn upload_to_modrinth(
         file_parts,
         primary_file,
     };
-    form = form.text("data", serde_json::to_string(&data).into_diagnostic()?);
+    form.text("data", serde_json::to_string(&data).into_diagnostic()?);
 
     for asset in assets {
-        form = GetAsset(asset)
-            .attach_to_form(context, form, asset.name.clone())
+        GetAsset(asset)
+            .attach_to_form(context, &mut form, asset.name.clone())
             .await?;
     }
 
     let url = format!("{}/version", API_URL);
-    println!("URL: {}", url);
     let response = context
         .client
         .post(url)
         .header(AUTH_KEY, &context.secrets.github_token)
-        .multipart(form)
+        .header(CONTENT_TYPE, form.content_type())
+        .body(body_with_progress(context, form.bytes()))
         .send()
         .await
         .into_diagnostic()?;
