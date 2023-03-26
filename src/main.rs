@@ -99,7 +99,7 @@ async fn main() -> Result<()> {
                 console::style("Modrinth").green()
             ));
             bar.set_style(simple_progress_spinner_style());
-            upload_to_modrinth(&context, &config, &project, &release, settings).await?;
+            upload_to_modrinth(&context, &config, project, &release, settings).await?;
             bar.finish_and_clear();
         }
 
@@ -110,7 +110,7 @@ async fn main() -> Result<()> {
                 console::style("CurseForge").red()
             ));
             bar.set_style(simple_progress_spinner_style());
-            upload_to_curseforge(&context, &config, &project, &release, settings).await?;
+            upload_to_curseforge(&context, &config, project, &release, settings).await?;
             bar.finish_and_clear();
         }
 

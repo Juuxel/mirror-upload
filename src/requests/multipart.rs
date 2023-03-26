@@ -19,6 +19,7 @@ struct FieldKey {
 
 impl Form {
     /// Creates a new form.
+    #[allow(clippy::new_without_default)]
     pub fn new() -> Self {
         Form {
             fields: Vec::new(),
@@ -95,7 +96,7 @@ impl Form {
 }
 
 /// Quotes the contents of a string according to RFC 822, 3.3: quoted-string.
-fn quote(str: &String) -> String {
+fn quote(str: &str) -> String {
     let mut result = String::new();
 
     for c in str.chars() {

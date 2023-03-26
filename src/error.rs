@@ -46,7 +46,7 @@ impl MuError {
     pub fn and_then<M: AsRef<str>>(self, msg: M) -> Self {
         Self::new(msg)
             .source_code(self.source_code.clone())
-            .span(self.span.clone())
+            .span(self.span)
             .cause(self)
     }
 
