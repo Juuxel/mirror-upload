@@ -29,7 +29,10 @@ impl Form {
 
     /// Gets the content type of this form, including the boundary.
     pub fn content_type(&self) -> String {
-        format!("multipart/form-data; boundary=\"{}\"", quote(&self.boundary))
+        format!(
+            "multipart/form-data; boundary=\"{}\"",
+            quote(&self.boundary)
+        )
     }
 
     /// Adds a text field to this form.
@@ -47,7 +50,7 @@ impl Form {
     pub fn file<K, F>(&mut self, field_name: K, file_name: F, data: Bytes)
     where
         K: AsRef<str>,
-        F: AsRef<str>
+        F: AsRef<str>,
     {
         let key = FieldKey {
             name: field_name.as_ref().to_string(),

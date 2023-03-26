@@ -8,8 +8,8 @@ use async_trait::async_trait;
 use miette::{miette, IntoDiagnostic, Result};
 
 use crate::github::{Asset, Release};
-use crate::requests::{ApiRequest, bytes_with_progress, Context, json_with_progress};
 use crate::requests::multipart::Form;
+use crate::requests::{bytes_with_progress, json_with_progress, ApiRequest, Context};
 
 const API_URL: &str = "https://api.github.com";
 const API_VERSION_KEY: &str = "X-GitHub-Api-Version";

@@ -12,8 +12,8 @@ use serde::Serialize;
 use crate::config::{Config, ModrinthSettings, Project, ReleaseLevel};
 use crate::github::{Asset, GetAsset, Release};
 use crate::modrinth::{Dependency, VersionType};
-use crate::requests::{body_with_progress, Context};
 use crate::requests::multipart::Form;
+use crate::requests::{body_with_progress, Context};
 use crate::template::Template;
 
 pub const API_URL: &str = "https://api.modrinth.com/v2";

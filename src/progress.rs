@@ -9,8 +9,7 @@ use indicatif::{ProgressBar, ProgressStyle};
 pub const SPINNER_CHARACTERS: &str = "-\\|/x";
 
 pub fn simple_progress_bar_style() -> ProgressStyle {
-    ProgressStyle::with_template("[{elapsed_precise}] {msg} {wide_bar} {pos}/{len}")
-        .unwrap()
+    ProgressStyle::with_template("[{elapsed_precise}] {msg} {wide_bar} {pos}/{len}").unwrap()
 }
 
 pub fn simple_progress_spinner_style() -> ProgressStyle {

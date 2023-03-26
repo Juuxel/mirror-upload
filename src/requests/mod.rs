@@ -6,14 +6,14 @@
 
 pub mod multipart;
 
-use std::cmp::min;
 use async_trait::async_trait;
 use bytes::{BufMut, Bytes, BytesMut};
-use futures::{StreamExt};
+use futures::StreamExt;
 use indicatif::MultiProgress;
 use miette::{IntoDiagnostic, Result};
 use reqwest::{Body, Client, Response};
 use serde::de::DeserializeOwned;
+use std::cmp::min;
 use thiserror::Error;
 
 pub use crate::config::Secrets;
@@ -37,7 +37,9 @@ pub async fn bytes_with_progress(context: &Context, response: Response) -> Resul
     } else {
         BytesMut::new()
     };
-    let bar = context.progress.add(network_progress_bar(response.content_length()));
+    let bar = context
+        .progress
+        .add(network_progress_bar(response.content_length()));
     bar.set_message("Downloading...");
 
     let url = response.url().clone();
@@ -45,7 +47,11 @@ pub async fn bytes_with_progress(context: &Context, response: Response) -> Resul
     let mut downloaded: u64 = 0;
 
     while let Some(bytes) = stream.next().await {
-        let bytes: Bytes = bytes.map_err(|err| MuError::new(format!("Could not download {}", url)).cause(err).to_report())?;
+        let bytes: Bytes = bytes.map_err(|err| {
+            MuError::new(format!("Could not download {}", url))
+                .cause(err)
+                .to_report()
+        })?;
         result.put_slice(&bytes);
 
         downloaded += bytes.len() as u64;
@@ -59,7 +65,10 @@ pub async fn bytes_with_progress(context: &Context, response: Response) -> Resul
     Ok(result.freeze())
 }
 
-pub async fn json_with_progress<T: DeserializeOwned>(context: &Context, response: Response) -> Result<T> {
+pub async fn json_with_progress<T: DeserializeOwned>(
+    context: &Context,
+    response: Response,
+) -> Result<T> {
     let bytes = bytes_with_progress(context, response).await?;
     serde_json::from_slice::<T>(&bytes).into_diagnostic()
 }
@@ -71,7 +80,9 @@ const CHUNK_SIZE: usize = 8192;
 struct NeverError;
 
 pub fn body_with_progress(context: &Context, bytes: Bytes) -> Body {
-    let progress_bar = context.progress.add(network_progress_bar(Some(bytes.len() as u64)));
+    let progress_bar = context
+        .progress
+        .add(network_progress_bar(Some(bytes.len() as u64)));
     progress_bar.set_message("Uploading...");
     let stream = async_stream::stream! {
         let mut i: usize = 0;

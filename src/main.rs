@@ -57,7 +57,11 @@ async fn main() -> Result<()> {
         toml::from_str(read_file(&config_path).await?.as_str()).into_diagnostic()?;
 
     let repo = Repo::parse(&config.github)?;
-    let context = Context { client, secrets, progress: MultiProgress::new() };
+    let context = Context {
+        client,
+        secrets,
+        progress: MultiProgress::new(),
+    };
 
     let github_bar = context.progress.add(ProgressBar::new_spinner());
     github_bar.set_message("Fetching GitHub release...");
@@ -90,7 +94,10 @@ async fn main() -> Result<()> {
 
         if let Some(settings) = project.get_modrinth(&config) {
             let bar = context.progress.add(ProgressBar::new_spinner());
-            bar.set_message(format!("Uploading to {}...", console::style("Modrinth").green()));
+            bar.set_message(format!(
+                "Uploading to {}...",
+                console::style("Modrinth").green()
+            ));
             bar.set_style(simple_progress_spinner_style());
             upload_to_modrinth(&context, &config, &project, &release, settings).await?;
             bar.finish_and_clear();
@@ -98,7 +105,10 @@ async fn main() -> Result<()> {
 
         if let Some(settings) = project.get_curseforge(&config) {
             let bar = context.progress.add(ProgressBar::new_spinner());
-            bar.set_message(format!("Uploading to {}...", console::style("CurseForge").red()));
+            bar.set_message(format!(
+                "Uploading to {}...",
+                console::style("CurseForge").red()
+            ));
             bar.set_style(simple_progress_spinner_style());
             upload_to_curseforge(&context, &config, &project, &release, settings).await?;
             bar.finish_and_clear();

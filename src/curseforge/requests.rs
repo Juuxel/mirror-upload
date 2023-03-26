@@ -14,8 +14,8 @@ use crate::config::{Config, CurseForgeSettings, Project, ReleaseLevel};
 use crate::curseforge::{GameVersion, GameVersionType, Relations, ReleaseType};
 use crate::github::{Asset, GetAsset, Release};
 use crate::progress::simple_progress_bar_style;
-use crate::requests::{ApiRequest, body_with_progress, Context};
 use crate::requests::multipart::Form;
+use crate::requests::{body_with_progress, ApiRequest, Context};
 
 const API_URL: &str = "https://minecraft.curseforge.com/api";
 const AUTH_KEY: &str = "X-Api-Token";
@@ -187,7 +187,9 @@ pub async fn upload_to_curseforge(
     let file_regex = project.get_regex(config)?;
     let assets = release.get_assets(&file_regex);
 
-    let bar = context.progress.add(ProgressBar::new(assets.len() as u64 + 1));
+    let bar = context
+        .progress
+        .add(ProgressBar::new(assets.len() as u64 + 1));
     bar.set_position(1);
     bar.set_message("Uploading files...");
     bar.set_style(simple_progress_bar_style());
