@@ -65,8 +65,11 @@ executing any kind of code, nor the JSP-style `<% %>` syntax.
 
 ## Secrets
 
-Secrets are read from `mirror_upload.secrets.toml`, another TOML file specified with the `-s` option,
-or the `GITHUB_TOKEN` and `CURSEFORGE_TOKEN` environment variables with the `--env-secrets` flag.
+Secrets are read from
+- `mirror_upload.secrets.toml` if it exists
+- another TOML file specified with the `-s` option
+- the `GITHUB_TOKEN` and `CURSEFORGE_TOKEN` environment variables with the `--env-secrets` flag or
+  if `mirror_upload.secrets.toml` does not exist
 
 Secrets file format:
 ```toml

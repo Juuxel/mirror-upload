@@ -5,11 +5,13 @@
  */
 
 use std::env::VarError;
+use std::error::Error;
 use std::path::{Path, PathBuf};
 
 use clap::Parser;
-use miette::{miette, IntoDiagnostic, Result, WrapErr};
+use miette::{miette, IntoDiagnostic, Result, WrapErr, Diagnostic, Report};
 use reqwest::Client;
+use thiserror::Error;
 use tokio::fs::File;
 use tokio::io::AsyncReadExt;
 
@@ -44,22 +46,12 @@ async fn main() -> Result<()> {
         .into_diagnostic()?;
 
     let args = Args::parse();
+    let secrets = get_secrets(&args).await.wrap_err("Could not find secrets")?;
     let config_path: PathBuf = args
         .config
         .unwrap_or(PathBuf::from("mirror_upload.config.toml"));
     let config: Config =
         toml::from_str(read_file(&config_path).await?.as_str()).into_diagnostic()?;
-    let secrets_path = args
-        .secrets
-        .unwrap_or(PathBuf::from("mirror_upload.secrets.toml"));
-    let secrets: Secrets = if args.env_secrets || !secrets_path.as_path().exists() {
-        Secrets {
-            github_token: get_env("GITHUB_TOKEN")?,
-            curseforge_token: get_env("CURSEFORGE_TOKEN")?,
-        }
-    } else {
-        toml::from_str(read_file(&secrets_path).await?.as_str()).into_diagnostic()?
-    };
 
     let repo = Repo::parse(&config.github)?;
     let context = Context { client, secrets };
@@ -97,14 +89,57 @@ async fn main() -> Result<()> {
     Ok(())
 }
 
-fn get_env(key: &str) -> Result<String> {
+async fn get_secrets(args: &Args) -> Result<Secrets> {
+    let secrets: Secrets = if let Some(path) = &args.secrets {
+        if args.env_secrets {
+            return Err(miette!("Cannot set both -s and --env-secrets at the same time"));
+        } else if !path.as_path().exists() {
+            let path_str = path.as_os_str().to_string_lossy();
+            return Err(miette!("Secrets file {} does not exist", path_str));
+        }
+
+        let secrets_str = read_file(&path).await?;
+        toml::from_str(secrets_str.as_str()).into_diagnostic()?
+    } else {
+        let path = PathBuf::from("mirror_upload.secrets.toml");
+
+        if args.env_secrets || !path.as_path().exists() {
+            Secrets {
+                github_token: get_env("GITHUB_TOKEN")?
+                    .ok_or_else(|| {
+                        let error = SecretsError {
+                            msg: "Missing environment variable GITHUB_TOKEN".to_string(),
+                            source: None,
+                            help: if !args.env_secrets {
+                                Some("Using environment variables because ./mirror_upload.secrets.toml doesn't exist")
+                            } else {
+                                None
+                            },
+                        };
+                        Report::from(error)
+                    })?,
+                curseforge_token: get_env("CURSEFORGE_TOKEN")?,
+            }
+        } else {
+            let secrets_str = read_file(&path).await?;
+            toml::from_str(secrets_str.as_str()).into_diagnostic()?
+        }
+    };
+    Ok(secrets)
+}
+
+fn get_env(key: &str) -> Result<Option<String>, SecretsError> {
     let result = std::env::var(key);
     match result {
-        Ok(value) => Ok(value),
-        Err(VarError::NotPresent) => Ok(String::from("")),
-        Err(_) => result
-            .into_diagnostic()
-            .wrap_err_with(|| format!("Failed to get environment variable {}", key)),
+        Ok(value) => Ok(Some(value)),
+        Err(VarError::NotPresent) => Ok(None),
+        Err(err) => Err(
+            SecretsError {
+                msg: format!("Failed to get environment variable {}", key),
+                source: Some(Box::new(err)),
+                help: None,
+            }
+        ),
     }
 }
 
@@ -116,4 +151,13 @@ where
     let mut result = String::new();
     file.read_to_string(&mut result).await.into_diagnostic()?;
     Ok(result)
+}
+
+#[derive(Error, Debug, Diagnostic)]
+#[error("{msg}")]
+struct SecretsError {
+    msg: String,
+    source: Option<Box<dyn Error + Send + Sync>>,
+    #[help]
+    help: Option<&'static str>,
 }

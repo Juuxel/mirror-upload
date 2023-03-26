@@ -26,7 +26,7 @@ impl ApiRequest<Vec<GameVersionType>> for GameVersionTypes {
         let response = context
             .client
             .get(url)
-            .header(AUTH_KEY, &context.secrets.curseforge_token)
+            .header(AUTH_KEY, context.secrets.curseforge_token_or_err()?)
             .send()
             .await
             .into_diagnostic()?;
@@ -55,7 +55,7 @@ impl ApiRequest<Vec<GameVersion>> for GameVersions {
         let response = context
             .client
             .get(url)
-            .header(AUTH_KEY, &context.secrets.curseforge_token)
+            .header(AUTH_KEY, context.secrets.curseforge_token_or_err()?)
             .send()
             .await
             .into_diagnostic()?;
@@ -123,7 +123,7 @@ async fn upload_asset_to_curseforge(
     let response = context
         .client
         .post(url)
-        .header(AUTH_KEY, &context.secrets.curseforge_token)
+        .header(AUTH_KEY, context.secrets.curseforge_token_or_err()?)
         .multipart(form)
         .send()
         .await

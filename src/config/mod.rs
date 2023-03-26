@@ -99,7 +99,13 @@ impl Project {
 #[derive(Deserialize)]
 pub struct Secrets {
     pub github_token: String,
-    pub curseforge_token: String,
+    pub curseforge_token: Option<String>,
+}
+
+impl Secrets {
+    pub fn curseforge_token_or_err(&self) -> Result<&String> {
+        self.curseforge_token.as_ref().ok_or_else(|| miette!("Missing CurseForge token"))
+    }
 }
 
 #[derive(Deserialize, Copy, Clone)]
